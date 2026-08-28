@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}视频预览 - DVS云盘{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mac-card">
+        <div class="mac-card-header">
+            <div class="flex items-center">
+                <i class="fas fa-video mr-3"></i>
+                <h5 class="mb-0">视频预览</h5>
+            </div>
+            <a href="{{ url_for('index') }}" class="mac-btn mac-btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i>返回
+            </a>
+        </div>
+        <div class="p-6">
+            <div class="text-center">
+                <video controls class="w-full rounded-xl shadow-mac" style="max-height: 70vh;">
+                    <source src="{{ file_path }}" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
