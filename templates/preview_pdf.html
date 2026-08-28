@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}PDF预览 - DVS云盘{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mac-card">
+        <div class="mac-card-header">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-file-pdf mr-3"></i>
+                    <h5 class="mb-0">PDF预览</h5>
+                </div>
+                <a href="{{ url_for('index') }}" class="mac-btn mac-btn-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>返回
+                </a>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="rounded-xl overflow-hidden shadow-mac">
+                <iframe src="{{ file_path }}" class="w-full" style="height: 80vh;" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
