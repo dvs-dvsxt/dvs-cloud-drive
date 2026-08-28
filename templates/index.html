@@ -1,0 +1,973 @@
+﻿{% extends "base.html" %}
+{% block title %}DVS云盘 - 首页{% endblock %}
+
+{% block content %}
+<!-- 面包屑 -->
+<div class="mac-breadcrumb">
+  <div class="flex items-center flex-wrap gap-2">
+    <div class="mac-breadcrumb-item">
+      <a href="{{ url_for('index') }}">根目录</a>
+    </div>
+    {% if breadcrumbs %}
+      {% for crumb in breadcrumbs[1:] %}
+        <div class="mac-breadcrumb-item">/</div>
+        <div class="mac-breadcrumb-item">
+          <a href="{{ url_for('index', path=crumb.path) }}">{{ crumb.name }}</a>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Flash 消息 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div id="flashMessages" class="fixed top-20 right-4 left-4 md:left-auto z-50 space-y-2 max-w-md">
+      {% for category, message in messages %}
+        <div class="mac-alert mac-alert-{{ category }} animate-slideInRight" data-duration="5000">
+          <div class="flex items-start gap-3">
+            {% if category == 'success' %}
+              <i class="fas fa-check-circle text-success text-xl"></i>
+            {% elif category == 'danger' %}
+              <i class="fas fa-exclamation-circle text-danger text-xl"></i>
+            {% elif category == 'warning' %}
+              <i class="fas fa-exclamation-triangle text-warning text-xl"></i>
+            {% else %}
+              <i class="fas fa-info-circle text-primary text-xl"></i>
+            {% endif %}
+            <div class="flex-1">
+              <div class="font-medium">
+                {% if category == 'success' %}成功{% elif category == 'danger' %}错误{% elif category == 'warning' %}警告{% else %}提示{% endif %}
+              </div>
+              <div class="text-sm mt-1">{{ message|safe }}</div>
+            </div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <script>
+      document.querySelectorAll('#flashMessages .mac-alert').forEach(msg => {
+        const duration = parseInt(msg.getAttribute('data-duration')) || 5000;
+        setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => msg.remove(), 300); }, duration);
+      });
+    </script>
+  {% endif %}
+{% endwith %}
+
+<!-- 顶部操作按钮 - 移动端适配 -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-dark">我的文件</h1>
+    <p class="text-muted mt-1 text-sm">管理你的文件与文件夹</p>
+  </div>
+  <div class="flex gap-3 flex-wrap">
+    <button onclick="showUploadPopup()" class="mac-btn mac-btn-sm">
+      <i class="fas fa-upload"></i><span>上传文件</span>
+    </button>
+    <button onclick="showCreateFolderPopup()" class="mac-btn mac-btn-sm mac-btn-outline">
+      <i class="fas fa-folder-plus"></i><span>新建文件夹</span>
+    </button>
+  </div>
+</div>
+
+<!-- 文件列表 - 自适应空白 -->
+<div class="mac-card">
+  <div class="mac-card-header">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-folder-open text-primary"></i><span>文件列表</span>
+    </div>
+    <span class="mac-badge mac-badge-primary">共 {{ items|length if items else 0 }} 项</span>
+  </div>
+  <div class="file-list-container">
+    {% if items and items|length > 0 %}
+      {% for item in items %}
+      <div class="mac-file-item">
+        <!-- 图标区域 -->
+        <div class="mac-file-icon 
+          {% if item.is_dir %}folder
+          {% elif item.ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'] %}image
+          {% elif item.ext in ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v'] %}video
+          {% elif item.ext in ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma'] %}audio
+          {% elif item.ext == 'pdf' %}pdf
+          {% elif item.ext in ['doc', 'docx'] %}word
+          {% elif item.ext in ['xls', 'xlsx', 'csv'] %}excel
+          {% elif item.ext in ['ppt', 'pptx'] %}powerpoint
+          {% elif item.ext in ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'] %}archive
+          {% elif item.ext in ['py', 'js', 'java', 'c', 'cpp', 'h', 'html', 'css', 'php', 'rb', 'go', 'rs', 'swift', 'kt'] %}code
+          {% elif item.ext in ['txt', 'md', 'log', 'ini', 'cfg', 'conf'] %}text
+          {% elif item.ext in ['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'appimage'] %}executable
+          {% elif item.ext in ['iso', 'img', 'vhd', 'vmdk'] %}disk
+          {% elif item.ext in ['psd', 'ai', 'eps'] %}design
+          {% elif item.ext in ['bin', 'dat', 'db'] %}binary
+          {% else %}document
+          {% endif %}">
+          
+          <!-- 图标内容 -->
+          {% if item.is_dir %}
+            <i class="fas fa-folder"></i>
+          {% elif item.ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'] %}
+            <i class="fas fa-image"></i>
+          {% elif item.ext in ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v'] %}
+            <i class="fas fa-video"></i>
+          {% elif item.ext in ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma'] %}
+            <i class="fas fa-music"></i>
+          {% elif item.ext == 'pdf' %}
+            <i class="fas fa-file-pdf"></i>
+          {% elif item.ext in ['doc', 'docx'] %}
+            <i class="fas fa-file-word"></i>
+          {% elif item.ext in ['xls', 'xlsx', 'csv'] %}
+            <i class="fas fa-file-excel"></i>
+          {% elif item.ext in ['ppt', 'pptx'] %}
+            <i class="fas fa-file-powerpoint"></i>
+          {% elif item.ext in ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'] %}
+            <i class="fas fa-file-archive"></i>
+          {% elif item.ext in ['py', 'js', 'java', 'c', 'cpp', 'h', 'html', 'css', 'php', 'rb', 'go', 'rs', 'swift', 'kt'] %}
+            <i class="fas fa-code"></i>
+          {% elif item.ext in ['txt', 'md', 'log', 'ini', 'cfg', 'conf'] %}
+            <i class="fas fa-file-alt"></i>
+          {% elif item.ext in ['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'appimage'] %}
+            <i class="fas fa-cog"></i>
+          {% elif item.ext in ['iso', 'img', 'vhd', 'vmdk'] %}
+            <i class="fas fa-compact-disc"></i>
+          {% elif item.ext in ['psd', 'ai', 'eps'] %}
+            <i class="fas fa-palette"></i>
+          {% elif item.ext in ['bin', 'dat', 'db'] %}
+            <i class="fas fa-microchip"></i>
+          {% else %}
+            <i class="fas fa-file"></i>
+          {% endif %}
+        </div>
+
+        <!-- 文件信息区域 - 支持自动换行 -->
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-col gap-2">
+            <!-- 文件名和标签行 - 自动换行 -->
+            <div class="flex flex-wrap items-center gap-2">
+              {% if item.is_dir %}
+                <a class="font-semibold text-dark hover:text-primary text-base break-all" href="{{ url_for('index', path=item.path) }}">{{ item.name }}</a>
+              {% else %}
+                <span class="font-semibold text-dark text-base break-all">{{ item.name }}</span>
+              {% endif %}
+              
+              <!-- 文件类型标签 -->
+              {% if not item.is_dir %}
+                <span class="mac-badge mac-badge-sm file-type-badge flex-shrink-0">
+                  <i class="fas fa-tag text-xs"></i>
+                  {% if item.ext %}
+                    {{ item.ext|upper }} - 
+                    {% if item.ext in ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma'] %}音频文件
+                    {% elif item.ext in ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v'] %}视频文件
+                    {% elif item.ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'] %}图片文件
+                    {% elif item.ext == 'pdf' %}PDF文档
+                    {% elif item.ext in ['doc', 'docx'] %}Word文档
+                    {% elif item.ext in ['xls', 'xlsx', 'csv'] %}Excel表格
+                    {% elif item.ext in ['ppt', 'pptx'] %}演示文稿
+                    {% elif item.ext in ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'] %}压缩文件
+                    {% elif item.ext in ['py', 'js', 'java', 'c', 'cpp', 'h', 'html', 'css', 'php', 'rb', 'go', 'rs', 'swift', 'kt'] %}代码文件
+                    {% elif item.ext in ['txt', 'md', 'log', 'ini', 'cfg', 'conf'] %}文本文件
+                    {% elif item.ext in ['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'appimage'] %}可执行文件
+                    {% elif item.ext in ['iso', 'img', 'vhd', 'vmdk'] %}磁盘镜像
+                    {% elif item.ext in ['psd', 'ai', 'eps'] %}设计文件
+                    {% elif item.ext in ['bin', 'dat', 'db'] %}二进制文件
+                    {% else %}其他文件
+                    {% endif %}
+                  {% else %}
+                    未知类型
+                  {% endif %}
+                </span>
+              {% else %}
+                <span class="mac-badge mac-badge-sm folder-badge flex-shrink-0">
+                  <i class="fas fa-folder-open text-xs"></i>
+                  文件夹目录
+                </span>
+              {% endif %}
+              
+              {% if item.previewable %}
+                <span class="mac-badge mac-badge-info flex-shrink-0"><i class="fas fa-eye"></i>可预览</span>
+              {% endif %}
+            </div>
+            
+            <!-- 文件详情 - 自动换行 -->
+            <div class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+              {% if item.is_dir %}
+                <span><i class="far fa-folder-open mr-1"></i>文件夹</span>
+              {% else %}
+                <span><i class="far fa-file mr-1"></i>{{ item.size or "未知大小" }}</span>
+              {% endif %}
+              <span><i class="far fa-clock mr-1"></i>{{ item.modified or "未知" }}</span>
+              {% if not item.is_dir %}
+                <span><i class="fas fa-hashtag mr-1"></i>扩展名: {{ item.ext|upper if item.ext else '无' }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮区域 - 彩色但柔和 -->
+        <div class="mac-action-buttons">
+          <!-- 文件夹专用"打开"按钮 -->
+          {% if item.is_dir %}
+            <a class="mac-action-btn mac-action-btn-folder" data-tooltip="打开文件夹" href="{{ url_for('index', path=item.path) }}">
+              <i class="fas fa-folder-open"></i>
+            </a>
+          {% endif %}
+          
+          {% if not item.is_dir %}
+            <a class="mac-action-btn mac-action-btn-download" data-tooltip="下载" href="{{ url_for('download', file_path=item.path) }}">
+              <i class="fas fa-download"></i>
+            </a>
+            {% if item.previewable %}
+              <a class="mac-action-btn mac-action-btn-preview" data-tooltip="预览" href="{{ url_for('preview', file_path=item.path) }}" target="_blank">
+                <i class="fas fa-eye"></i>
+              </a>
+            {% endif %}
+          {% endif %}
+          
+          <button class="mac-action-btn mac-action-btn-rename" data-tooltip="重命名" onclick="openRenamePopup('{{ item.path }}', '{{ item.name }}')">
+            <i class="fas fa-pen"></i>
+          </button>
+          <button class="mac-action-btn mac-action-btn-share" data-tooltip="分享" onclick="openSharePopup('{{ item.path }}')">
+            <i class="fas fa-link"></i>
+          </button>
+          <button class="mac-action-btn mac-action-btn-delete" data-tooltip="删除" onclick="openDeletePopup('{{ item.path }}', '{{ item.name }}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="mac-alert mac-alert-info">
+        <i class="fas fa-info-circle text-primary text-xl"></i>
+        <div>
+          <div class="font-semibold text-dark">这里还没有文件</div>
+          <div class="text-muted text-sm mt-1">点击右上角上传文件或创建文件夹。</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 上传弹窗 - MAC风格圆角 -->
+<div id="uploadPopup" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closePopup('uploadPopup')"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2"><i class="fas fa-upload text-primary"></i><span class="font-semibold">上传文件</span></div>
+      <button class="mac-action-btn" onclick="closePopup('uploadPopup')"><i class="fas fa-times"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="p-5 space-y-4">
+      <input type="hidden" name="path" value="{{ path or '' }}">
+      <div>
+        <label class="block text-sm font-medium text-dark mb-2">选择文件（支持多选）</label>
+        <input class="mac-input w-full rounded-xl" type="file" name="file" multiple required>
+        <p class="text-muted text-xs mt-2"><i class="fas fa-info-circle"></i> 可同时选择多个文件上传</p>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full" onclick="closePopup('uploadPopup')">取消</button>
+        <button type="submit" class="mac-btn mac-btn-success rounded-full"><i class="fas fa-cloud-upload-alt"></i>开始上传</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 新建文件夹弹窗 -->
+<div id="createFolderPopup" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closePopup('createFolderPopup')"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2"><i class="fas fa-folder-plus text-primary"></i><span class="font-semibold">新建文件夹</span></div>
+      <button class="mac-action-btn" onclick="closePopup('createFolderPopup')"><i class="fas fa-times"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('create_folder') }}" class="p-5 space-y-4">
+      <input type="hidden" name="path" value="{{ path or '' }}">
+      <div>
+        <label class="block text-sm font-medium text-dark mb-2">文件夹名称</label>
+        <input class="mac-input w-full rounded-xl" type="text" name="folder_name" placeholder="例如：学习资料" required>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full" onclick="closePopup('createFolderPopup')">取消</button>
+        <button type="submit" class="mac-btn rounded-full"><i class="fas fa-check"></i>创建</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 分享弹窗 -->
+<div id="sharePopup" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closePopup('sharePopup')"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2"><i class="fas fa-link text-primary"></i><span class="font-semibold">分享</span></div>
+      <button class="mac-action-btn" onclick="closePopup('sharePopup')"><i class="fas fa-times"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('share') }}" class="p-5 space-y-4">
+      <input type="hidden" name="item_path" id="shareItemPathInput">
+      <div class="mac-alert mac-alert-info rounded-xl">
+        <i class="fas fa-info-circle text-primary text-xl"></i>
+        <div><div class="font-semibold text-dark">创建分享链接</div><div class="text-muted text-sm mt-1">提交后，后端会显示分享链接。</div></div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full" onclick="closePopup('sharePopup')">取消</button>
+        <button type="submit" class="mac-btn rounded-full"><i class="fas fa-link"></i>生成链接</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 重命名弹窗 -->
+<div id="renamePopup" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closePopup('renamePopup')"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2"><i class="fas fa-pen text-primary"></i><span class="font-semibold">重命名</span></div>
+      <button class="mac-action-btn" onclick="closePopup('renamePopup')"><i class="fas fa-times"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('rename') }}" class="p-5 space-y-4">
+      <input type="hidden" name="path" value="{{ path or '' }}">
+      <input type="hidden" name="item_path" id="renameItemPathInput">
+      <div>
+        <label class="block text-sm font-medium text-dark mb-2">新名称</label>
+        <input class="mac-input w-full rounded-xl" type="text" name="new_name" id="renameNewNameInput" required>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full" onclick="closePopup('renamePopup')">取消</button>
+        <button type="submit" class="mac-btn mac-btn-warning rounded-full"><i class="fas fa-check"></i>确认修改</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 删除弹窗 -->
+<div id="deletePopup" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closePopup('deletePopup')"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2 text-danger"><i class="fas fa-trash"></i><span class="font-semibold">确认删除</span></div>
+      <button class="mac-action-btn" onclick="closePopup('deletePopup')"><i class="fas fa-times"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('delete') }}" class="p-5 space-y-4">
+      <input type="hidden" name="path" value="{{ path or '' }}">
+      <input type="hidden" name="item_path" id="deleteItemPathInput">
+      <div class="mac-alert mac-alert-danger rounded-xl">
+        <i class="fas fa-exclamation-triangle text-danger text-xl"></i>
+        <div><div class="font-semibold text-dark">你确定要删除 <span id="deleteNameSpan"></span> 吗？</div><div class="text-muted text-sm mt-1">删除后不可恢复。</div></div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full" onclick="closePopup('deletePopup')">取消</button>
+        <button type="submit" class="mac-btn mac-btn-danger rounded-full"><i class="fas fa-trash"></i>确认删除</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 浮动快速操作菜单 -->
+<div id="floatMenu" class="hidden fixed bottom-24 right-6 left-6 sm:left-auto mac-dropdown z-50 rounded-xl shadow-lg">
+  <div class="mac-dropdown-item rounded-lg" onclick="showUploadPopup(); hideFloatMenu();"><i class="fas fa-upload text-primary"></i><span>上传文件</span></div>
+  <div class="mac-dropdown-item rounded-lg" onclick="showCreateFolderPopup(); hideFloatMenu();"><i class="fas fa-folder-plus text-success"></i><span>新建文件夹</span></div>
+  <div class="mac-dropdown-item rounded-lg" onclick="window.location.href='{{ url_for('shared_files') }}'; hideFloatMenu();"><i class="fas fa-share-alt text-info"></i><span>我的分享</span></div>
+</div>
+
+<style>
+/* ========== 自适应空白系统 ========== */
+/* 基础容器 - 响应式内边距 */
+.container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 主内容区域 - 自适应边距 */
+main {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 文件列表容器 - 动态边距 */
+.file-list-container {
+  width: 100%;
+  padding: 0;
+}
+
+/* 屏幕宽度 >= 1200px (电脑) - 保持原样 */
+@media (min-width: 1200px) {
+  main .container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .file-list-container {
+    padding: 24px;
+  }
+  .mac-card {
+    margin: 0;
+  }
+}
+
+/* 屏幕宽度 992px - 1199px (小电脑/大平板横屏) - 较小空白 */
+@media (min-width: 992px) and (max-width: 1199px) {
+  main .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .file-list-container {
+    padding: 20px;
+  }
+  .mac-card {
+    margin: 0;
+  }
+}
+
+/* 屏幕宽度 768px - 991px (平板横屏) - 中等空白 */
+@media (min-width: 768px) and (max-width: 991px) {
+  main .container {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .file-list-container {
+    padding: 18px;
+  }
+  .mac-card {
+    margin: 0 4px;
+  }
+}
+
+/* 屏幕宽度 640px - 767px (平板竖屏/大手机) - 较小空白 */
+@media (min-width: 640px) and (max-width: 767px) {
+  main .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .file-list-container {
+    padding: 14px;
+  }
+  .mac-card {
+    margin: 0 6px;
+  }
+}
+
+/* 屏幕宽度 480px - 639px (手机) - 很小空白 */
+@media (min-width: 480px) and (max-width: 639px) {
+  main .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .file-list-container {
+    padding: 12px;
+  }
+  .mac-card {
+    margin: 0 8px;
+  }
+}
+
+/* 屏幕宽度 360px - 479px (小手机) - 最小空白 */
+@media (min-width: 360px) and (max-width: 479px) {
+  main .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .file-list-container {
+    padding: 10px;
+  }
+  .mac-card {
+    margin: 0 6px;
+  }
+}
+
+/* 屏幕宽度 < 360px (极小手机) - 边缘贴边 */
+@media (max-width: 359px) {
+  main .container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .file-list-container {
+    padding: 8px;
+  }
+  .mac-card {
+    margin: 0 4px;
+  }
+}
+
+/* 文件类型图标颜色增强 */
+.mac-file-icon.folder { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.mac-file-icon.image { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+.mac-file-icon.video { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.mac-file-icon.audio { background: linear-gradient(135deg, #10b981, #059669); }
+.mac-file-icon.pdf { background: linear-gradient(135deg, #f87171, #ef4444); }
+.mac-file-icon.word { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.mac-file-icon.excel { background: linear-gradient(135deg, #10b981, #059669); }
+.mac-file-icon.powerpoint { background: linear-gradient(135deg, #f97316, #ea580c); }
+.mac-file-icon.archive { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.mac-file-icon.code { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.mac-file-icon.text { background: linear-gradient(135deg, #94a3b8, #64748b); }
+.mac-file-icon.executable { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.mac-file-icon.disk { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.mac-file-icon.design { background: linear-gradient(135deg, #ec4899, #db2777); }
+.mac-file-icon.binary { background: linear-gradient(135deg, #78716c, #57534e); }
+.mac-file-icon.document { background: linear-gradient(135deg, #a855f7, #9333ea); }
+
+/* 文件列表项 */
+.mac-file-item {
+  background: var(--repo-color-bg);
+  border: 1px solid var(--repo-color-border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.mac-file-item:hover {
+  background: var(--repo-color-bg-hover, #f8fafc);
+  border-color: var(--repo-color-border-hover);
+}
+
+/* 移动端布局调整 */
+@media (max-width: 640px) {
+  .mac-file-item {
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+  }
+  .mac-file-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    align-self: flex-start;
+  }
+  .mac-action-buttons {
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+}
+
+/* 桌面端保持行内布局 */
+@media (min-width: 641px) {
+  .mac-file-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 16px;
+  }
+  .mac-action-buttons {
+    flex-shrink: 0;
+  }
+}
+
+/* 文件名自动换行 */
+.break-all {
+  word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* 文件类型标签 */
+.file-type-badge {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--repo-color-primary);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.folder-badge {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--repo-color-success);
+}
+
+.mac-badge-sm { 
+  padding: 4px 12px; 
+  font-size: 11px; 
+  border-radius: 20px;
+}
+
+.mac-badge-info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--repo-color-primary);
+}
+
+/* 操作按钮 - 柔和彩色 */
+.mac-action-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mac-action-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* 文件夹按钮 */
+.mac-action-btn-folder {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+.mac-action-btn-folder:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+/* 下载按钮 */
+.mac-action-btn-download {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+.mac-action-btn-download:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #059669;
+}
+
+/* 预览按钮 */
+.mac-action-btn-preview {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+}
+.mac-action-btn-preview:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  color: #7c3aed;
+}
+
+/* 重命名按钮 */
+.mac-action-btn-rename {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+.mac-action-btn-rename:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+/* 分享按钮 */
+.mac-action-btn-share {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.2);
+  color: #06b6d4;
+}
+.mac-action-btn-share:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: #06b6d4;
+  color: #0891b2;
+}
+
+/* 删除按钮 */
+.mac-action-btn-delete {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.mac-action-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+/* 移动端按钮触摸优化 */
+@media (max-width: 640px) {
+  .mac-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+  .mac-action-buttons {
+    gap: 10px;
+  }
+}
+
+/* 动画 */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slideInRight { animation: slideInRight 0.3s ease-out; }
+
+/* 面包屑移动端适配 */
+@media (max-width: 640px) {
+  .mac-breadcrumb {
+    padding: 10px 14px;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    border-radius: 14px;
+  }
+  .mac-breadcrumb .flex {
+    flex-wrap: nowrap;
+  }
+  .mac-breadcrumb-item {
+    font-size: 12px;
+  }
+}
+
+/* Flash消息移动端适配 */
+@media (max-width: 640px) {
+  #flashMessages {
+    top: 70px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
+/* 卡片移动端边距优化 */
+@media (max-width: 640px) {
+  .mac-card {
+    border-radius: 20px;
+  }
+  .mac-card-header {
+    padding: 14px 16px;
+  }
+}
+
+/* 模态框MAC风格圆角 */
+.mac-dialog {
+  border-radius: 24px !important;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.mac-card-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 面包屑样式 */
+.mac-breadcrumb {
+  background: var(--repo-color-bg);
+  border: 1px solid var(--repo-color-border);
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+}
+
+.mac-breadcrumb-item {
+  color: var(--repo-color-text-secondary);
+  font-size: 14px;
+}
+
+.mac-breadcrumb-item a {
+  color: var(--repo-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.mac-breadcrumb-item a:hover {
+  text-decoration: underline;
+}
+
+/* 卡片样式 */
+.mac-card {
+  background: var(--repo-color-bg);
+  border-radius: 20px;
+  border: 1px solid var(--repo-color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.mac-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.mac-card-header {
+  background: var(--repo-color-bg-secondary);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--repo-color-border);
+  font-weight: 600;
+  color: var(--repo-color-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 按钮样式 */
+.mac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--repo-color-primary);
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mac-btn:hover {
+  background: var(--repo-color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.mac-btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.mac-btn-outline {
+  background: transparent;
+  color: var(--repo-color-primary);
+  border: 1px solid var(--repo-color-border);
+  box-shadow: none;
+}
+
+.mac-btn-outline:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: var(--repo-color-primary);
+}
+
+.mac-btn-success {
+  background: var(--repo-color-success);
+}
+.mac-btn-success:hover {
+  background: #059669;
+}
+
+.mac-btn-warning {
+  background: var(--repo-color-warning);
+}
+.mac-btn-warning:hover {
+  background: #d97706;
+}
+
+.mac-btn-danger {
+  background: var(--repo-color-danger);
+}
+.mac-btn-danger:hover {
+  background: #dc2626;
+}
+
+/* 警告框 */
+.mac-alert {
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mac-alert-success {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.mac-alert-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.mac-alert-warning {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.mac-alert-info {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* 浮动按钮 */
+.mac-float-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--repo-color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  border: none;
+}
+
+.mac-float-btn:hover {
+  background: var(--repo-color-primary-hover);
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* 下拉菜单 */
+.mac-dropdown {
+  background: var(--repo-color-bg);
+  border: 1px solid var(--repo-color-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  min-width: 180px;
+}
+
+.mac-dropdown-item {
+  padding: 10px 16px;
+  border-radius: 12px;
+  color: var(--repo-color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mac-dropdown-item:hover {
+  background: var(--repo-color-bg-hover);
+  color: var(--repo-color-primary);
+}
+</style>
+
+<script>
+  function hideFloatMenu() { const m = document.getElementById('floatMenu'); if (m) m.classList.add('hidden'); }
+  const floatBtn = document.querySelector('.mac-float-btn');
+  const floatMenu = document.getElementById('floatMenu');
+  if (floatBtn && floatMenu) {
+    floatBtn.addEventListener('click', function(e) { e.stopPropagation(); floatMenu.classList.toggle('hidden'); });
+    document.addEventListener('click', hideFloatMenu);
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      ['uploadPopup','createFolderPopup','sharePopup','renamePopup','deletePopup'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
+      hideFloatMenu();
+    }
+  });
+  function openSharePopup(itemPath) {
+    document.getElementById('shareItemPathInput').value = itemPath;
+    const p = document.getElementById('sharePopup');
+    p.classList.remove('hidden');
+    p.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+  }
+  function openRenamePopup(itemPath, name) {
+    document.getElementById('renameItemPathInput').value = itemPath;
+    document.getElementById('renameNewNameInput').value = name;
+    const p = document.getElementById('renamePopup');
+    p.classList.remove('hidden');
+    p.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+  }
+  function openDeletePopup(itemPath, name) {
+    document.getElementById('deleteItemPathInput').value = itemPath;
+    document.getElementById('deleteNameSpan').textContent = name;
+    const p = document.getElementById('deletePopup');
+    p.classList.remove('hidden');
+    p.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+  }
+</script>
+{% endblock %}
