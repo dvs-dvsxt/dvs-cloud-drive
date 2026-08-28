@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}音频预览 - DVS云盘{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mac-card">
+        <div class="mac-card-header">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-music mr-3"></i>
+                    <h5 class="mb-0">音频预览</h5>
+                </div>
+                <a href="{{ url_for('index') }}" class="mac-btn mac-btn-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>返回
+                </a>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="text-center">
+                <audio controls class="w-full max-w-2xl mx-auto rounded-lg shadow-mac">
+                    <source src="{{ file_path }}" type="audio/mpeg">
+                    您的浏览器不支持音频播放。
+                </audio>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
