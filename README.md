@@ -6,6 +6,15 @@
 
 ---
 
+## ✅ v1.0.1 Fixes
+
+Fixed bugs in v1.0.0:
+- 🔍 **Search UI**: Added the missing file-search UI to the interface
+- 🗑️ **Delete Share**: Fixed the inability to delete share links
+- 🖼️ **Share Page Icons**: Fixed file icons displaying incorrectly on the shared-files page
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
