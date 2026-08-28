@@ -1,742 +1,742 @@
-﻿<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}DVS云盘{% endblock %}</title>
-    
-    <!-- 核心样式：基于 css.css -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css.css') }}">
-    
-    <!-- Tailwind CSS (辅助) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            corePlugins: {
-                preflight: false, // 避免与css.css冲突
-            }
-        }
-    </script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Bootstrap Icons (补充) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- 额外样式覆盖 -->
-    <style>
-        /* 确保css.css变量生效 */
-        :root {
-            --repo-color-primary: #3b82f6;
-            --repo-color-primary-hover: #2563eb;
-            --repo-color-primary-active: #1d4ed8;
-            --repo-color-danger: #ef4444;
-            --repo-color-success: #10b981;
-            --repo-color-warning: #f59e0b;
-            --repo-color-info: #3b82f6;
-            --repo-color-text: #1f2937;
-            --repo-color-text-secondary: #4b5563;
-            --repo-color-text-tertiary: #9ca3af;
-            --repo-color-bg: #ffffff;
-            --repo-color-bg-secondary: #f9fafb;
-            --repo-color-bg-tertiary: #f3f4f6;
-            --repo-color-border: #e5e7eb;
-            --repo-color-border-hover: #d1d5db;
-            --repo-header-height: 60px;
-            --repo-sidebar-width: 260px;
-            --repo-spacing-1: 4px;
-            --repo-spacing-2: 8px;
-            --repo-spacing-3: 12px;
-            --repo-spacing-4: 16px;
-            --repo-spacing-5: 20px;
-            --repo-spacing-6: 24px;
-            --repo-spacing-8: 32px;
-            --repo-radius-sm: 4px;
-            --repo-radius-md: 6px;
-            --repo-radius-lg: 8px;
-            --repo-radius-xl: 12px;
-            --repo-radius-full: 9999px;
-        }
-        
-        /* 全局重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: var(--repo-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
-            font-size: var(--repo-font-size-base, 14px);
-            line-height: var(--repo-line-height-base, 1.5);
-            color: var(--repo-color-text);
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            min-height: 100vh;
-        }
-        
-        /* Mac风格导航栏 - 基于css.css变量 */
-        .mac-nav {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--repo-color-border);
-            box-shadow: var(--repo-shadow-sm, 0 1px 3px rgba(0,0,0,0.05));
-            padding: 0;
-            position: sticky;
-            top: 0;
-            z-index: var(--repo-z-sticky, 100);
-        }
-        
-        .mac-nav .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 var(--repo-spacing-6);
-            height: var(--repo-header-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .mac-nav-brand {
-            font-weight: 700;
-            font-size: 20px;
-            color: var(--repo-color-text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-        
-        .mac-nav-brand i {
-            font-size: 24px;
-            color: var(--repo-color-primary);
-        }
-        
-        .mac-nav-link {
-            color: var(--repo-color-text-secondary);
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: var(--repo-radius-md);
-            transition: all 0.2s ease;
-            margin: 0 2px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-        
-        .mac-nav-link:hover {
-            background: rgba(59, 130, 246, 0.08);
-            color: var(--repo-color-primary);
-        }
-        
-        .mac-nav-link.active {
-            background: var(--repo-color-primary);
-            color: white;
-        }
-        
-        .mac-nav-link.active i {
-            color: white;
-        }
-        
-        /* 按钮样式 - 基于css.css */
-        .mac-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: var(--repo-color-primary);
-            color: white;
-            border: none;
-            border-radius: var(--repo-radius-full);
-            padding: 10px 24px;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: var(--repo-shadow-xs);
-            text-decoration: none;
-        }
-        
-        .mac-btn:hover {
-            background: var(--repo-color-primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
-        .mac-btn-sm {
-            padding: 6px 16px;
-            font-size: 13px;
-        }
-        
-        .mac-btn-outline {
-            background: transparent;
-            color: var(--repo-color-primary);
-            border: 1px solid var(--repo-color-border);
-            box-shadow: none;
-        }
-        
-        .mac-btn-outline:hover {
-            background: rgba(59, 130, 246, 0.08);
-            border-color: var(--repo-color-primary);
-        }
-        
-        .mac-btn-secondary {
-            background: var(--repo-color-text-secondary);
-        }
-        
-        .mac-btn-secondary:hover {
-            background: #475569;
-        }
-        
-        .mac-btn-success {
-            background: var(--repo-color-success);
-        }
-        
-        .mac-btn-danger {
-            background: var(--repo-color-danger);
-        }
-        
-        /* 卡片样式 */
-        .mac-card {
-            background: var(--repo-color-bg);
-            border-radius: var(--repo-radius-xl);
-            border: 1px solid var(--repo-color-border);
-            box-shadow: var(--repo-shadow-sm);
-            overflow: hidden;
-            transition: all 0.2s ease;
-        }
-        
-        .mac-card:hover {
-            box-shadow: var(--repo-shadow-lg);
-            transform: translateY(-2px);
-        }
-        
-        .mac-card-header {
-            background: var(--repo-color-bg-secondary);
-            padding: 20px;
-            border-bottom: 1px solid var(--repo-color-border);
-            font-weight: 600;
-            color: var(--repo-color-text);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        /* 文件列表项 */
-        .mac-file-item {
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-lg);
-            padding: 16px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: all 0.2s ease;
-        }
-        
-        .mac-file-item:hover {
-            background: var(--repo-color-bg-hover, #f8fafc);
-            border-color: var(--repo-color-border-hover);
-            transform: translateX(4px);
-        }
-        
-        .mac-file-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--repo-radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-        
-        .mac-file-icon.folder {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        }
-        
-        .mac-file-icon.image {
-            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-        }
-        
-        .mac-file-icon.video {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-        }
-        
-        .mac-file-icon.audio {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        
-        .mac-file-icon.pdf {
-            background: linear-gradient(135deg, #f87171, #ef4444);
-        }
-        
-        .mac-file-icon.document {
-            background: linear-gradient(135deg, #94a3b8, #64748b);
-        }
-        
-        /* 面包屑 */
-        .mac-breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-lg);
-            padding: 12px 20px;
-            margin-bottom: 24px;
-        }
-        
-        .mac-breadcrumb-item {
-            color: var(--repo-color-text-secondary);
-            font-size: 14px;
-        }
-        
-        .mac-breadcrumb-item a {
-            color: var(--repo-color-primary);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        /* 输入框 */
-        .mac-input {
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-lg);
-            padding: 12px 16px;
-            font-size: 14px;
-            color: var(--repo-color-text);
-            transition: all 0.2s ease;
-            outline: none;
-        }
-        
-        .mac-input:focus {
-            border-color: var(--repo-color-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        /* 徽章 */
-        .mac-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: var(--repo-color-bg-tertiary);
-            color: var(--repo-color-text-secondary);
-            padding: 4px 12px;
-            border-radius: var(--repo-radius-full);
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .mac-badge-primary {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--repo-color-primary);
-        }
-        
-        .mac-badge-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--repo-color-success);
-        }
-        
-        .mac-badge-warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--repo-color-warning);
-        }
-        
-        .mac-badge-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--repo-color-danger);
-        }
-        
-        /* 警告框 */
-        .mac-alert {
-            background: var(--repo-color-bg);
-            border: 1px solid;
-            border-radius: var(--repo-radius-lg);
-            padding: 16px;
-            margin: 16px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .mac-alert-success {
-            border-color: var(--repo-color-success);
-            background: rgba(16, 185, 129, 0.05);
-        }
-        
-        .mac-alert-warning {
-            border-color: var(--repo-color-warning);
-            background: rgba(245, 158, 11, 0.05);
-        }
-        
-        .mac-alert-danger {
-            border-color: var(--repo-color-danger);
-            background: rgba(239, 68, 68, 0.05);
-        }
-        
-        .mac-alert-info {
-            border-color: var(--repo-color-primary);
-            background: rgba(59, 130, 246, 0.05);
-        }
-        
-        /* 动作按钮组 */
-        .mac-action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .mac-action-btn {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-md);
-            color: var(--repo-color-text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .mac-action-btn:hover {
-            background: var(--repo-color-bg-hover);
-            border-color: var(--repo-color-border-hover);
-            color: var(--repo-color-primary);
-        }
-        
-        /* 下拉菜单 */
-        .mac-dropdown {
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-lg);
-            box-shadow: var(--repo-shadow-lg);
-            padding: 8px;
-            min-width: 200px;
-        }
-        
-        .mac-dropdown-item {
-            padding: 10px 16px;
-            border-radius: var(--repo-radius-md);
-            color: var(--repo-color-text);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-        
-        .mac-dropdown-item:hover {
-            background: var(--repo-color-bg-hover);
-            color: var(--repo-color-primary);
-        }
-        
-        /* 表格 */
-        .mac-table {
-            background: var(--repo-color-bg);
-            border: 1px solid var(--repo-color-border);
-            border-radius: var(--repo-radius-lg);
-            overflow: hidden;
-            width: 100%;
-        }
-        
-        .mac-table th {
-            background: var(--repo-color-bg-secondary);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--repo-color-text);
-            border-bottom: 1px solid var(--repo-color-border);
-        }
-        
-        .mac-table td {
-            padding: 16px;
-            border-bottom: 1px solid var(--repo-color-border-light, #f1f5f9);
-            color: var(--repo-color-text-secondary);
-        }
-        
-        .mac-table tr:hover td {
-            background: var(--repo-color-bg-hover);
-        }
-        
-        /* 浮动按钮 */
-        .mac-float-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--repo-color-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 100;
-            border: none;
-        }
-        
-        .mac-float-btn:hover {
-            background: var(--repo-color-primary-hover);
-            transform: translateY(-2px) scale(1.05);
-        }
-        
-        /* 复选框 */
-        .mac-checkbox {
-            width: 18px;
-            height: 18px;
-            border-radius: var(--repo-radius-sm);
-            border: 2px solid var(--repo-color-border);
-            cursor: pointer;
-        }
-        
-        /* 模态框/弹窗 - 保持原有逻辑不变 */
-        .mac-dialog-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1040;
-        }
-        
-        .mac-dialog {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--repo-color-bg);
-            border-radius: var(--repo-radius-xl);
-            box-shadow: var(--repo-shadow-xl);
-            z-index: 1050;
-            min-width: 400px;
-            max-width: 500px;
-            width: 90%;
-        }
-        
-        /* 弹窗样式 - 保持原有 */
-        #uploadPopup, #createFolderPopup, #sharePopup, #renamePopup, #deletePopup {
-            display: none !important;
-        }
-        
-        #uploadPopup:not(.hidden), #createFolderPopup:not(.hidden), 
-        #sharePopup:not(.hidden), #renamePopup:not(.hidden), 
-        #deletePopup:not(.hidden) {
-            display: flex !important;
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        /* 滚动条 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: var(--repo-color-bg-tertiary);
-            border-radius: var(--repo-radius-full);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--repo-color-border);
-            border-radius: var(--repo-radius-full);
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--repo-color-border-hover);
-        }
-        
-        /* 多彩图标增强 */
-        .text-primary { color: var(--repo-color-primary); }
-        .text-success { color: var(--repo-color-success); }
-        .text-danger { color: var(--repo-color-danger); }
-        .text-warning { color: var(--repo-color-warning); }
-        .text-info { color: var(--repo-color-info); }
-        
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .mac-nav .container {
-                padding: 0 var(--repo-spacing-4);
-            }
-            .mac-nav-link span:not(.hidden-on-mobile) {
-                display: none;
-            }
-            .mac-nav-link {
-                padding: 8px 12px;
-            }
-            .mac-dialog {
-                min-width: 90%;
-                width: 90%;
-            }
-        }
-    </style>
-    
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <!-- 导航栏 -->
-    <nav class="mac-nav">
-        <div class="container">
-            <div class="flex items-center space-x-8">
-                <a href="{{ url_for('index') }}" class="mac-nav-brand">
-                    <i class="fas fa-cloud text-2xl"></i>
-                    <span>DVS云盘</span>
-                </a>
-                
-                <div class="flex items-center space-x-1">
-                    <a href="{{ url_for('index') }}" 
-                       class="mac-nav-link {{ 'active' if request.endpoint == 'index' }}">
-                        <i class="fas fa-home"></i>
-                        <span>主页</span>
-                    </a>
-                    
-                    <a href="{{ url_for('shared_files') }}" 
-                       class="mac-nav-link {{ 'active' if request.endpoint == 'shared_files' }}">
-                        <i class="fas fa-link"></i>
-                        <span>已分享</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="flex items-center">
-                {% if session.get('username') %}
-                <div class="relative ml-4">
-                    <button class="mac-nav-link flex items-center" id="userMenuButton">
-                        <i class="fas fa-user-circle text-xl mr-2"></i>
-                        <span>{{ session.username }}</span>
-                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                    </button>
-                    
-                    <div class="mac-dropdown absolute right-0 mt-2 hidden z-50" id="userMenuDropdown">
-                        <a href="{{ url_for('change_password') }}" class="mac-dropdown-item">
-                            <i class="fas fa-key"></i>
-                            <span>修改密码</span>
-                        </a>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <a href="{{ url_for('logout') }}" class="mac-dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>退出登录</span>
-                        </a>
-                    </div>
-                </div>
-                {% else %}
-                <a href="{{ url_for('login') }}" class="mac-btn mac-btn-sm ml-4">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>登录</span>
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-    
-    <!-- 主内容区域 -->
-    <main class="container mx-auto px-4 py-8">
-        {% block content %}{% endblock %}
-    </main>
-    
-    <!-- 浮动操作按钮 -->
-    <button class="mac-float-btn mac-tooltip" data-tooltip="快速操作">
-        <i class="fas fa-plus"></i>
-    </button>
-    
-    <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    
-    <script>
-        // 下拉菜单切换
-        const userMenuBtn = document.getElementById('userMenuButton');
-        const userMenuDropdown = document.getElementById('userMenuDropdown');
-        if (userMenuBtn && userMenuDropdown) {
-            userMenuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userMenuDropdown.classList.toggle('hidden');
-            });
-        }
-        
-        // 点击外部关闭下拉菜单
-        document.addEventListener('click', function() {
-            if (userMenuDropdown) userMenuDropdown.classList.add('hidden');
-        });
-        
-        // 全局函数声明
-        window.showUploadPopup = function() {
-            const popup = document.getElementById('uploadPopup');
-            if (popup) {
-                popup.classList.remove('hidden');
-                popup.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
-            }
-        };
-        
-        window.showCreateFolderPopup = function() {
-            const popup = document.getElementById('createFolderPopup');
-            if (popup) {
-                popup.classList.remove('hidden');
-                popup.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
-            }
-        };
-        
-        window.closePopup = function(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.add('hidden');
-                el.style.cssText = '';
-            }
-        };
-        
-        // 工具提示
-        document.querySelectorAll('.mac-tooltip').forEach(element => {
-            element.addEventListener('mouseenter', function() {
-                const tooltip = this.getAttribute('data-tooltip');
-                if (tooltip) {
-                    const tooltipEl = document.createElement('div');
-                    tooltipEl.className = 'fixed bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-[9999] pointer-events-none';
-                    tooltipEl.textContent = tooltip;
-                    const rect = this.getBoundingClientRect();
-                    tooltipEl.style.left = rect.left + (rect.width / 2) + 'px';
-                    tooltipEl.style.top = rect.top - 30 + 'px';
-                    tooltipEl.style.transform = 'translateX(-50%)';
-                    document.body.appendChild(tooltipEl);
-                    this._tooltipEl = tooltipEl;
-                }
-            });
-            
-            element.addEventListener('mouseleave', function() {
-                if (this._tooltipEl) {
-                    this._tooltipEl.remove();
-                    this._tooltipEl = null;
-                }
-            });
-        });
-    </script>
-    
-    {% block extra_js %}{% endblock %}
-    
-    <!-- 页脚 -->
-    <footer class="mt-12 py-8 text-center border-t border-gray-200">
-        <div class="container mx-auto px-4">
-            <p class="text-gray-600 mb-2 text-lg">🚀 DVS云盘 · 某个开发者的作品</p>
-            <p class="text-gray-500 text-sm">
-                安全的代码是优美的代码 · 
-                用户友好的设计是简单的设计 ·
-                每一次302重定向都是明了的防护
-            </p>
-            <p class="text-gray-400 text-xs mt-4">
-                &copy; 2026 DVS云盘 保留所有权利
-            </p>
-        </div>
-    </footer>
-</body>
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DVS云盘{% endblock %}</title>
+    
+    <!-- 核心样式：基于 css.css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css.css') }}">
+    
+    <!-- Tailwind CSS (辅助) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false, // 避免与css.css冲突
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap Icons (补充) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- 额外样式覆盖 -->
+    <style>
+        /* 确保css.css变量生效 */
+        :root {
+            --repo-color-primary: #3b82f6;
+            --repo-color-primary-hover: #2563eb;
+            --repo-color-primary-active: #1d4ed8;
+            --repo-color-danger: #ef4444;
+            --repo-color-success: #10b981;
+            --repo-color-warning: #f59e0b;
+            --repo-color-info: #3b82f6;
+            --repo-color-text: #1f2937;
+            --repo-color-text-secondary: #4b5563;
+            --repo-color-text-tertiary: #9ca3af;
+            --repo-color-bg: #ffffff;
+            --repo-color-bg-secondary: #f9fafb;
+            --repo-color-bg-tertiary: #f3f4f6;
+            --repo-color-border: #e5e7eb;
+            --repo-color-border-hover: #d1d5db;
+            --repo-header-height: 60px;
+            --repo-sidebar-width: 260px;
+            --repo-spacing-1: 4px;
+            --repo-spacing-2: 8px;
+            --repo-spacing-3: 12px;
+            --repo-spacing-4: 16px;
+            --repo-spacing-5: 20px;
+            --repo-spacing-6: 24px;
+            --repo-spacing-8: 32px;
+            --repo-radius-sm: 4px;
+            --repo-radius-md: 6px;
+            --repo-radius-lg: 8px;
+            --repo-radius-xl: 12px;
+            --repo-radius-full: 9999px;
+        }
+        
+        /* 全局重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--repo-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
+            font-size: var(--repo-font-size-base, 14px);
+            line-height: var(--repo-line-height-base, 1.5);
+            color: var(--repo-color-text);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+        }
+        
+        /* Mac风格导航栏 - 基于css.css变量 */
+        .mac-nav {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--repo-color-border);
+            box-shadow: var(--repo-shadow-sm, 0 1px 3px rgba(0,0,0,0.05));
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: var(--repo-z-sticky, 100);
+        }
+        
+        .mac-nav .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--repo-spacing-6);
+            height: var(--repo-header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .mac-nav-brand {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--repo-color-text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        
+        .mac-nav-brand i {
+            font-size: 24px;
+            color: var(--repo-color-primary);
+        }
+        
+        .mac-nav-link {
+            color: var(--repo-color-text-secondary);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: var(--repo-radius-md);
+            transition: all 0.2s ease;
+            margin: 0 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .mac-nav-link:hover {
+            background: rgba(59, 130, 246, 0.08);
+            color: var(--repo-color-primary);
+        }
+        
+        .mac-nav-link.active {
+            background: var(--repo-color-primary);
+            color: white;
+        }
+        
+        .mac-nav-link.active i {
+            color: white;
+        }
+        
+        /* 按钮样式 - 基于css.css */
+        .mac-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--repo-color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--repo-radius-full);
+            padding: 10px 24px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--repo-shadow-xs);
+            text-decoration: none;
+        }
+        
+        .mac-btn:hover {
+            background: var(--repo-color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .mac-btn-sm {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+        
+        .mac-btn-outline {
+            background: transparent;
+            color: var(--repo-color-primary);
+            border: 1px solid var(--repo-color-border);
+            box-shadow: none;
+        }
+        
+        .mac-btn-outline:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--repo-color-primary);
+        }
+        
+        .mac-btn-secondary {
+            background: var(--repo-color-text-secondary);
+        }
+        
+        .mac-btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .mac-btn-success {
+            background: var(--repo-color-success);
+        }
+        
+        .mac-btn-danger {
+            background: var(--repo-color-danger);
+        }
+        
+        /* 卡片样式 */
+        .mac-card {
+            background: var(--repo-color-bg);
+            border-radius: var(--repo-radius-xl);
+            border: 1px solid var(--repo-color-border);
+            box-shadow: var(--repo-shadow-sm);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .mac-card:hover {
+            box-shadow: var(--repo-shadow-lg);
+            transform: translateY(-2px);
+        }
+        
+        .mac-card-header {
+            background: var(--repo-color-bg-secondary);
+            padding: 20px;
+            border-bottom: 1px solid var(--repo-color-border);
+            font-weight: 600;
+            color: var(--repo-color-text);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* 文件列表项 */
+        .mac-file-item {
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-lg);
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .mac-file-item:hover {
+            background: var(--repo-color-bg-hover, #f8fafc);
+            border-color: var(--repo-color-border-hover);
+            transform: translateX(4px);
+        }
+        
+        .mac-file-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--repo-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .mac-file-icon.folder {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        }
+        
+        .mac-file-icon.image {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+        }
+        
+        .mac-file-icon.video {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        
+        .mac-file-icon.audio {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .mac-file-icon.pdf {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+        }
+        
+        .mac-file-icon.document {
+            background: linear-gradient(135deg, #94a3b8, #64748b);
+        }
+        
+        /* 面包屑 */
+        .mac-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-lg);
+            padding: 12px 20px;
+            margin-bottom: 24px;
+        }
+        
+        .mac-breadcrumb-item {
+            color: var(--repo-color-text-secondary);
+            font-size: 14px;
+        }
+        
+        .mac-breadcrumb-item a {
+            color: var(--repo-color-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* 输入框 */
+        .mac-input {
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-lg);
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--repo-color-text);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        .mac-input:focus {
+            border-color: var(--repo-color-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 徽章 */
+        .mac-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--repo-color-bg-tertiary);
+            color: var(--repo-color-text-secondary);
+            padding: 4px 12px;
+            border-radius: var(--repo-radius-full);
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .mac-badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--repo-color-primary);
+        }
+        
+        .mac-badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--repo-color-success);
+        }
+        
+        .mac-badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--repo-color-warning);
+        }
+        
+        .mac-badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--repo-color-danger);
+        }
+        
+        /* 警告框 */
+        .mac-alert {
+            background: var(--repo-color-bg);
+            border: 1px solid;
+            border-radius: var(--repo-radius-lg);
+            padding: 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mac-alert-success {
+            border-color: var(--repo-color-success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .mac-alert-warning {
+            border-color: var(--repo-color-warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+        
+        .mac-alert-danger {
+            border-color: var(--repo-color-danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        .mac-alert-info {
+            border-color: var(--repo-color-primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        /* 动作按钮组 */
+        .mac-action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .mac-action-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-md);
+            color: var(--repo-color-text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .mac-action-btn:hover {
+            background: var(--repo-color-bg-hover);
+            border-color: var(--repo-color-border-hover);
+            color: var(--repo-color-primary);
+        }
+        
+        /* 下拉菜单 */
+        .mac-dropdown {
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-lg);
+            box-shadow: var(--repo-shadow-lg);
+            padding: 8px;
+            min-width: 200px;
+        }
+        
+        .mac-dropdown-item {
+            padding: 10px 16px;
+            border-radius: var(--repo-radius-md);
+            color: var(--repo-color-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        
+        .mac-dropdown-item:hover {
+            background: var(--repo-color-bg-hover);
+            color: var(--repo-color-primary);
+        }
+        
+        /* 表格 */
+        .mac-table {
+            background: var(--repo-color-bg);
+            border: 1px solid var(--repo-color-border);
+            border-radius: var(--repo-radius-lg);
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .mac-table th {
+            background: var(--repo-color-bg-secondary);
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--repo-color-text);
+            border-bottom: 1px solid var(--repo-color-border);
+        }
+        
+        .mac-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--repo-color-border-light, #f1f5f9);
+            color: var(--repo-color-text-secondary);
+        }
+        
+        .mac-table tr:hover td {
+            background: var(--repo-color-bg-hover);
+        }
+        
+        /* 浮动按钮 */
+        .mac-float-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--repo-color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 100;
+            border: none;
+        }
+        
+        .mac-float-btn:hover {
+            background: var(--repo-color-primary-hover);
+            transform: translateY(-2px) scale(1.05);
+        }
+        
+        /* 复选框 */
+        .mac-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: var(--repo-radius-sm);
+            border: 2px solid var(--repo-color-border);
+            cursor: pointer;
+        }
+        
+        /* 模态框/弹窗 - 保持原有逻辑不变 */
+        .mac-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+        }
+        
+        .mac-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--repo-color-bg);
+            border-radius: var(--repo-radius-xl);
+            box-shadow: var(--repo-shadow-xl);
+            z-index: 1050;
+            min-width: 400px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        /* 弹窗样式 - 保持原有 */
+        #uploadPopup, #createFolderPopup, #sharePopup, #renamePopup, #deletePopup {
+            display: none !important;
+        }
+        
+        #uploadPopup:not(.hidden), #createFolderPopup:not(.hidden), 
+        #sharePopup:not(.hidden), #renamePopup:not(.hidden), 
+        #deletePopup:not(.hidden) {
+            display: flex !important;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--repo-color-bg-tertiary);
+            border-radius: var(--repo-radius-full);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--repo-color-border);
+            border-radius: var(--repo-radius-full);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--repo-color-border-hover);
+        }
+        
+        /* 多彩图标增强 */
+        .text-primary { color: var(--repo-color-primary); }
+        .text-success { color: var(--repo-color-success); }
+        .text-danger { color: var(--repo-color-danger); }
+        .text-warning { color: var(--repo-color-warning); }
+        .text-info { color: var(--repo-color-info); }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .mac-nav .container {
+                padding: 0 var(--repo-spacing-4);
+            }
+            .mac-nav-link span:not(.hidden-on-mobile) {
+                display: none;
+            }
+            .mac-nav-link {
+                padding: 8px 12px;
+            }
+            .mac-dialog {
+                min-width: 90%;
+                width: 90%;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="mac-nav">
+        <div class="container">
+            <div class="flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="mac-nav-brand">
+                    <i class="fas fa-cloud text-2xl"></i>
+                    <span>DVS云盘</span>
+                </a>
+                
+                <div class="flex items-center space-x-1">
+                    <a href="{{ url_for('index') }}" 
+                       class="mac-nav-link {{ 'active' if request.endpoint == 'index' }}">
+                        <i class="fas fa-home"></i>
+                        <span>主页</span>
+                    </a>
+                    
+                    <a href="{{ url_for('shared_files') }}" 
+                       class="mac-nav-link {{ 'active' if request.endpoint == 'shared_files' }}">
+                        <i class="fas fa-link"></i>
+                        <span>已分享</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex items-center">
+                {% if session.get('username') %}
+                <div class="relative ml-4">
+                    <button class="mac-nav-link flex items-center" id="userMenuButton">
+                        <i class="fas fa-user-circle text-xl mr-2"></i>
+                        <span>{{ session.username }}</span>
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                    
+                    <div class="mac-dropdown absolute right-0 mt-2 hidden z-50" id="userMenuDropdown">
+                        <a href="{{ url_for('change_password') }}" class="mac-dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>修改密码</span>
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="{{ url_for('logout') }}" class="mac-dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>退出登录</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="mac-btn mac-btn-sm ml-4">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>登录</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 主内容区域 -->
+    <main class="container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- 浮动操作按钮 -->
+    <button class="mac-float-btn mac-tooltip" data-tooltip="快速操作">
+        <i class="fas fa-plus"></i>
+    </button>
+    
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <script>
+        // 下拉菜单切换
+        const userMenuBtn = document.getElementById('userMenuButton');
+        const userMenuDropdown = document.getElementById('userMenuDropdown');
+        if (userMenuBtn && userMenuDropdown) {
+            userMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userMenuDropdown.classList.toggle('hidden');
+            });
+        }
+        
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function() {
+            if (userMenuDropdown) userMenuDropdown.classList.add('hidden');
+        });
+        
+        // 全局函数声明
+        window.showUploadPopup = function() {
+            const popup = document.getElementById('uploadPopup');
+            if (popup) {
+                popup.classList.remove('hidden');
+                popup.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+            }
+        };
+        
+        window.showCreateFolderPopup = function() {
+            const popup = document.getElementById('createFolderPopup');
+            if (popup) {
+                popup.classList.remove('hidden');
+                popup.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+            }
+        };
+        
+        window.closePopup = function(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('hidden');
+                el.style.cssText = '';
+            }
+        };
+        
+        // 工具提示
+        document.querySelectorAll('.mac-tooltip').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                const tooltip = this.getAttribute('data-tooltip');
+                if (tooltip) {
+                    const tooltipEl = document.createElement('div');
+                    tooltipEl.className = 'fixed bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-[9999] pointer-events-none';
+                    tooltipEl.textContent = tooltip;
+                    const rect = this.getBoundingClientRect();
+                    tooltipEl.style.left = rect.left + (rect.width / 2) + 'px';
+                    tooltipEl.style.top = rect.top - 30 + 'px';
+                    tooltipEl.style.transform = 'translateX(-50%)';
+                    document.body.appendChild(tooltipEl);
+                    this._tooltipEl = tooltipEl;
+                }
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                if (this._tooltipEl) {
+                    this._tooltipEl.remove();
+                    this._tooltipEl = null;
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- 页脚 -->
+    <footer class="mt-12 py-8 text-center border-t border-gray-200">
+        <div class="container mx-auto px-4">
+            <p class="text-gray-600 mb-2 text-lg">DVSCloud</p>
+            <p class="text-gray-500 text-sm">
+                安全的代码是优美的代码 · 
+                用户友好的设计是简单的设计 ·
+                每一次302重定向都是明了的防护
+            </p>
+            <p class="text-gray-400 text-xs mt-4">
+                &copy; 2026 DVS云盘 保留所有权利
+            </p>
+        </div>
+    </footer>
+</body>
 </html>
