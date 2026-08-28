@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}搜索结果 - DVS云盘{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- 面包屑导航 -->
+    <div class="mac-breadcrumb mb-8">
+        <div class="flex items-center space-x-2">
+            {% for crumb in breadcrumbs %}
+                {% if loop.last %}
+                    <span class="mac-breadcrumb-item text-dark font-medium">{{ crumb.name }}</span>
+                {% else %}
+                    <a href="{{ url_for('index', path=crumb.path) }}" class="mac-breadcrumb-item">
+                        {{ crumb.name }}
+                    </a>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 搜索结果统计 -->
+    <div class="mac-card mb-8">
+        <div class="mac-card-header">
+            <div class="flex items-center">
+                <i class="fas fa-search mr-3"></i>
+                <h5 class="mb-0">搜索结果</h5>
+                <span class="mac-badge mac-badge-primary ml-3">{{ results|length }} 个匹配项</span>
+            </div>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-700">
+                搜索关键词: <strong>"{{ query }}"</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- 搜索结果列表 -->
+    <div class="mac-card">
+        <div class="mac-card-header">
+            <div class="flex items-center">
+                <i class="fas fa-list mr-3"></i>
+                <h5 class="mb-0">搜索结果列表</h5>
+            </div>
+        </div>
+        <div class="p-6">
+            {% if results %}
+            <div class="space-y-3">
+                {% for item in results %}
+                <div class="mac-file-item">
+                    <div class="flex items-center">
+                        <div class="mr-4">
+                            {% if item.is_dir %}
+                            <div class="mac-file-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            {% else %}
+                                {% if item.ext in ['png', 'jpg', 'jpeg', 'gif'] %}
+                                <div class="mac-file-icon image">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                {% elif item.ext in ['mp4', 'avi', 'mov'] %}
+                                <div class="mac-file-icon video">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                {% elif item.ext in ['mp3', 'wav'] %}
+                                <div class="mac-file-icon audio">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                {% elif item.ext == 'pdf' %}
+                                <div class="mac-file-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                {% else %}
+                                <div class="mac-file-icon document">
+                                    <i class="fas fa-file"></i>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <div class="mb-1">
+                                <strong class="text-dark">{{ item.name }}</strong>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                {% if item.is_dir %}
+                                文件夹 • {{ item.path }}
+                                {% else %}
+                                文件 • {{ item.size }} • {{ item.path }}
+                                {% endif %}
+                                • 修改时间: {{ item.modified }}
+                            </div>
+                        </div>
+                        <div class="mac-action-buttons">
+                            {% if item.is_dir %}
+                            <a href="{{ url_for('index', path=item.path) }}" class="mac-action-btn" title="打开文件夹">
+                                <i class="fas fa-folder-open"></i>
+                            </a>
+                            {% else %}
+                                {% if item.previewable %}
+                                <a href="{{ url_for('preview', file_path=item.path) }}" class="mac-action-btn" title="预览" target="_blank">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% endif %}
+                            <a href="{{ url_for('download', file_path=item.path) }}" class="mac-action-btn" title="下载">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+                <h5 class="text-gray-600 text-lg font-medium mb-2">没有找到匹配的结果</h5>
+                <p class="text-gray-500 mb-6">请尝试使用其他关键词搜索</p>
+                <a href="{{ url_for('index', path=path) }}" class="mac-btn">
+                    <i class="fas fa-arrow-left mr-2"></i>返回文件列表
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
