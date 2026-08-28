@@ -1,0 +1,618 @@
+﻿{% extends "base.html" %}
+{% block title %}已分享文件 - DVS云盘{% endblock %}
+
+{% block content %}
+<!-- Flash 消息 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div id="flashMessages" class="fixed top-20 right-4 left-4 md:left-auto z-50 space-y-2 max-w-md">
+      {% for category, message in messages %}
+        <div class="mac-alert mac-alert-{{ category }} animate-slideInRight" data-duration="5000">
+          <div class="flex items-start gap-3">
+            {% if category == 'success' %}
+              <i class="fas fa-check-circle text-success text-xl"></i>
+            {% elif category == 'danger' %}
+              <i class="fas fa-exclamation-circle text-danger text-xl"></i>
+            {% elif category == 'warning' %}
+              <i class="fas fa-exclamation-triangle text-warning text-xl"></i>
+            {% else %}
+              <i class="fas fa-info-circle text-primary text-xl"></i>
+            {% endif %}
+            <div class="flex-1">
+              <div class="font-medium">
+                {% if category == 'success' %}成功{% elif category == 'danger' %}错误{% elif category == 'warning' %}警告{% else %}提示{% endif %}
+              </div>
+              <div class="text-sm mt-1">{{ message|safe }}</div>
+            </div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <script>
+      document.querySelectorAll('#flashMessages .mac-alert').forEach(msg => {
+        const duration = parseInt(msg.getAttribute('data-duration')) || 5000;
+        setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => msg.remove(), 300); }, duration);
+      });
+    </script>
+  {% endif %}
+{% endwith %}
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-dark">已分享文件</h1>
+    <p class="text-muted mt-1 text-sm">管理你分享的文件和文件夹</p>
+  </div>
+  <div class="flex gap-3 flex-wrap">
+    <a href="{{ url_for('index') }}" class="mac-btn mac-btn-sm mac-btn-outline">
+      <i class="fas fa-arrow-left"></i><span>返回文件列表</span>
+    </a>
+  </div>
+</div>
+
+<div class="mac-card">
+  <div class="mac-card-header">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-share-alt text-primary"></i><span>分享列表</span>
+    </div>
+    <span class="mac-badge mac-badge-primary">共 {{ shared_items|length }} 个分享</span>
+  </div>
+  <div class="file-list-container">
+    {% if shared_items %}
+      {% for item in shared_items %}
+      <div class="mac-file-item">
+        <!-- 图标区域 -->
+        <div class="mac-file-icon {% if item.is_dir %}folder{% else %}document{% endif %}">
+          {% if item.is_dir %}
+            <i class="fas fa-folder"></i>
+          {% else %}
+            <i class="fas fa-file-share"></i>
+          {% endif %}
+        </div>
+
+        <!-- 文件信息区域 - 支持自动换行 -->
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-col gap-2">
+            <!-- 文件名和标签行 - 自动换行 -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-semibold text-dark text-base break-all">{{ item.name }}</span>
+              
+              <!-- 文件类型标签 -->
+              {% if not item.is_dir %}
+                <span class="mac-badge mac-badge-sm file-type-badge flex-shrink-0">
+                  <i class="fas fa-tag text-xs"></i>
+                  分享文件
+                </span>
+              {% else %}
+                <span class="mac-badge mac-badge-sm folder-badge flex-shrink-0">
+                  <i class="fas fa-folder-open text-xs"></i>
+                  分享文件夹
+                </span>
+              {% endif %}
+            </div>
+            
+            <!-- 文件详情 - 自动换行 -->
+            <div class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span><i class="fas fa-link mr-1"></i>分享ID: {{ item.share_id }}</span>
+              <span><i class="far fa-calendar-alt mr-1"></i>创建时间: {{ item.created_at }}</span>
+              <span><i class="fas fa-download mr-1"></i>下载次数: {{ item.downloads }}</span>
+              <span><i class="far fa-folder mr-1"></i>路径: {{ item.path }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮区域 - 彩色但柔和 -->
+        <div class="mac-action-buttons">
+          <a class="mac-action-btn mac-action-btn-share" data-tooltip="访问分享链接" href="{{ url_for('download_shared', share_id=item.share_id) }}" target="_blank">
+            <i class="fas fa-external-link-alt"></i>
+          </a>
+          <button class="mac-action-btn mac-action-btn-delete unshare-btn" data-tooltip="取消分享" data-share-id="{{ item.share_id }}" data-item-name="{{ item.name }}">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="mac-alert mac-alert-info">
+        <i class="fas fa-info-circle text-primary text-xl"></i>
+        <div>
+          <div class="font-semibold text-dark">还没有分享任何文件</div>
+          <div class="text-muted text-sm mt-1">从文件列表中选择文件或文件夹并点击"分享"按钮来创建分享链接。</div>
+        </div>
+      </div>
+      <div class="text-center py-6">
+        <a href="{{ url_for('index') }}" class="mac-btn">
+          <i class="fas fa-folder mr-2"></i>浏览文件
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 取消分享弹窗 -->
+<div id="unshareDialog" class="hidden fixed inset-0 items-center justify-center" style="display:none;">
+  <div class="absolute inset-0 bg-black/50" onclick="closeDialog()"></div>
+  <div class="mac-dialog relative w-[90%] max-w-lg mx-4 rounded-2xl overflow-hidden">
+    <div class="mac-card-header bg-gray-50 px-5 py-4">
+      <div class="flex items-center gap-2 text-danger"><i class="fas fa-trash"></i><span class="font-semibold">取消分享</span></div>
+      <button class="mac-action-btn mac-dialog-close" onclick="closeDialog()"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="unshareForm" method="POST" action="{{ url_for('unshare') }}" class="p-5 space-y-4">
+      <input type="hidden" id="unshare_share_id" name="share_id">
+      <div class="mac-alert mac-alert-warning rounded-xl">
+        <i class="fas fa-exclamation-triangle text-warning text-xl"></i>
+        <div>
+          <div class="font-semibold text-dark">确定要取消分享 "<span id="unshare_item_name" class="font-medium"></span>" 吗？</div>
+          <div class="text-muted text-sm mt-1">取消分享后，已分享的链接将立即失效。</div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2 flex-wrap">
+        <button type="button" class="mac-btn mac-btn-outline rounded-full mac-dialog-close" onclick="closeDialog()">取消</button>
+        <button type="submit" class="mac-btn mac-btn-danger rounded-full">确认取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+/* ========== 自适应空白系统 ========== */
+/* 主内容区域 - 自适应边距 */
+main {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 文件列表容器 - 动态边距 */
+.file-list-container {
+  width: 100%;
+  padding: 0;
+}
+
+/* 屏幕宽度 >= 1200px (电脑) - 保持原样 */
+@media (min-width: 1200px) {
+  main .container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .file-list-container {
+    padding: 24px;
+  }
+  .mac-card {
+    margin: 0;
+  }
+}
+
+/* 屏幕宽度 992px - 1199px (小电脑/大平板横屏) - 较小空白 */
+@media (min-width: 992px) and (max-width: 1199px) {
+  main .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .file-list-container {
+    padding: 20px;
+  }
+  .mac-card {
+    margin: 0;
+  }
+}
+
+/* 屏幕宽度 768px - 991px (平板横屏) - 中等空白 */
+@media (min-width: 768px) and (max-width: 991px) {
+  main .container {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .file-list-container {
+    padding: 18px;
+  }
+  .mac-card {
+    margin: 0 4px;
+  }
+}
+
+/* 屏幕宽度 640px - 767px (平板竖屏/大手机) - 较小空白 */
+@media (min-width: 640px) and (max-width: 767px) {
+  main .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .file-list-container {
+    padding: 14px;
+  }
+  .mac-card {
+    margin: 0 6px;
+  }
+}
+
+/* 屏幕宽度 480px - 639px (手机) - 很小空白 */
+@media (min-width: 480px) and (max-width: 639px) {
+  main .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .file-list-container {
+    padding: 12px;
+  }
+  .mac-card {
+    margin: 0 8px;
+  }
+}
+
+/* 屏幕宽度 360px - 479px (小手机) - 最小空白 */
+@media (min-width: 360px) and (max-width: 479px) {
+  main .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .file-list-container {
+    padding: 10px;
+  }
+  .mac-card {
+    margin: 0 6px;
+  }
+}
+
+/* 屏幕宽度 < 360px (极小手机) - 边缘贴边 */
+@media (max-width: 359px) {
+  main .container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .file-list-container {
+    padding: 8px;
+  }
+  .mac-card {
+    margin: 0 4px;
+  }
+}
+
+/* 文件类型图标颜色 */
+.mac-file-icon.folder { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.mac-file-icon.document { background: linear-gradient(135deg, #a855f7, #9333ea); }
+
+/* 文件列表项 */
+.mac-file-item {
+  background: var(--repo-color-bg);
+  border: 1px solid var(--repo-color-border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.mac-file-item:hover {
+  background: var(--repo-color-bg-hover, #f8fafc);
+  border-color: var(--repo-color-border-hover);
+}
+
+/* 移动端布局调整 */
+@media (max-width: 640px) {
+  .mac-file-item {
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+  }
+  .mac-file-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    align-self: flex-start;
+  }
+  .mac-action-buttons {
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+}
+
+/* 桌面端保持行内布局 */
+@media (min-width: 641px) {
+  .mac-file-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 16px;
+  }
+  .mac-action-buttons {
+    flex-shrink: 0;
+  }
+}
+
+/* 文件名自动换行 */
+.break-all {
+  word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* 文件类型标签 */
+.file-type-badge {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--repo-color-primary);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.folder-badge {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--repo-color-success);
+}
+
+.mac-badge-sm { 
+  padding: 4px 12px; 
+  font-size: 11px; 
+  border-radius: 20px;
+}
+
+/* 操作按钮 - 柔和彩色 */
+.mac-action-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mac-action-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* 分享按钮 */
+.mac-action-btn-share {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.2);
+  color: #06b6d4;
+}
+.mac-action-btn-share:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: #06b6d4;
+  color: #0891b2;
+}
+
+/* 删除按钮 */
+.mac-action-btn-delete {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.mac-action-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+/* 移动端按钮触摸优化 */
+@media (max-width: 640px) {
+  .mac-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+  .mac-action-buttons {
+    gap: 10px;
+  }
+}
+
+/* 动画 */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slideInRight { animation: slideInRight 0.3s ease-out; }
+
+/* 卡片样式 */
+.mac-card {
+  background: var(--repo-color-bg);
+  border-radius: 20px;
+  border: 1px solid var(--repo-color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.mac-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.mac-card-header {
+  background: var(--repo-color-bg-secondary);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--repo-color-border);
+  font-weight: 600;
+  color: var(--repo-color-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 移动端卡片头部调整 */
+@media (max-width: 640px) {
+  .mac-card-header {
+    padding: 14px 16px;
+  }
+}
+
+/* 按钮样式 */
+.mac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--repo-color-primary);
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+}
+
+.mac-btn:hover {
+  background: var(--repo-color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.mac-btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.mac-btn-outline {
+  background: transparent;
+  color: var(--repo-color-primary);
+  border: 1px solid var(--repo-color-border);
+  box-shadow: none;
+}
+
+.mac-btn-outline:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: var(--repo-color-primary);
+}
+
+.mac-btn-danger {
+  background: var(--repo-color-danger);
+}
+.mac-btn-danger:hover {
+  background: #dc2626;
+}
+
+/* 警告框 */
+.mac-alert {
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mac-alert-success {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.mac-alert-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.mac-alert-warning {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.mac-alert-info {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* 徽章 */
+.mac-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--repo-color-bg-tertiary);
+  color: var(--repo-color-text-secondary);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mac-badge-primary {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--repo-color-primary);
+}
+
+/* 模态框MAC风格圆角 */
+.mac-dialog {
+  border-radius: 24px !important;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Flash消息移动端适配 */
+@media (max-width: 640px) {
+  #flashMessages {
+    top: 70px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
+/* 文本颜色 */
+.text-dark { color: #1e293b; }
+.text-muted { color: #64748b; }
+.text-primary { color: #3b82f6; }
+.text-success { color: #10b981; }
+.text-danger { color: #ef4444; }
+.text-warning { color: #f59e0b; }
+
+/* 背景色 */
+.bg-gray-50 { background-color: #f9fafb; }
+</style>
+
+<script>
+$(document).ready(function() {
+  // 取消分享功能 - 显示弹窗
+  $('.unshare-btn').click(function() {
+    var shareId = $(this).data('share-id');
+    var itemName = $(this).data('item-name');
+    
+    $('#unshare_share_id').val(shareId);
+    $('#unshare_item_name').text(itemName);
+    
+    // 显示弹窗
+    $('#unshareDialog').removeClass('hidden');
+    $('#unshareDialog').css({
+      'display': 'flex',
+      'position': 'fixed',
+      'inset': '0',
+      'background-color': 'rgba(0, 0, 0, 0.5)',
+      'align-items': 'center',
+      'justify-content': 'center',
+      'z-index': '9999'
+    });
+    $('body').css('overflow', 'hidden');
+  });
+  
+  // ESC键关闭弹窗
+  $(document).keyup(function(e) {
+    if (e.key === "Escape") {
+      closeDialog();
+    }
+  });
+});
+
+// 关闭弹窗函数
+function closeDialog() {
+  $('#unshareDialog').addClass('hidden');
+  $('#unshareDialog').css('display', 'none');
+  $('body').css('overflow', 'auto');
+}
+
+// 点击遮罩层关闭弹窗
+document.addEventListener('click', function(e) {
+  const dialog = document.getElementById('unshareDialog');
+  if (dialog && !dialog.classList.contains('hidden')) {
+    if (e.target === dialog || e.target.classList.contains('mac-dialog-close') || e.target.closest('.mac-dialog-close')) {
+      closeDialog();
+    }
+  }
+});
+</script>
+{% endblock %}
