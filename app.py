@@ -1173,10 +1173,13 @@ def shared_files():
     
     shares_list = []
     for share in user_shares:
+        name = os.path.basename(share['original_path'])
+        ext = name.rsplit('.', 1)[1].lower() if not share['is_dir'] and '.' in name else ''
         shares_list.append({
             'share_id': share['share_id'],
-            'name': os.path.basename(share['original_path']),
+            'name': name,
             'path': share['original_path'],
+            'ext': ext,
             'created_at': share['created_at'],
             'downloads': share['downloads'],
             'is_dir': bool(share['is_dir'])
