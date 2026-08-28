@@ -64,11 +64,38 @@
       {% for item in shared_items %}
       <div class="mac-file-item">
         <!-- 图标区域 -->
-        <div class="mac-file-icon {% if item.is_dir %}folder{% else %}document{% endif %}">
+        <div class="mac-file-icon 
+          {% if item.is_dir %}folder
+          {% elif item.ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'] %}image
+          {% elif item.ext in ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v'] %}video
+          {% elif item.ext in ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma'] %}audio
+          {% elif item.ext == 'pdf' %}pdf
+          {% elif item.ext in ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'] %}archive
+          {% elif item.ext in ['txt', 'md', 'log', 'ini', 'cfg', 'conf'] %}text
+          {% elif item.ext in ['py', 'js', 'java', 'c', 'cpp', 'h', 'html', 'css', 'php', 'rb', 'go', 'rs', 'swift', 'kt'] %}code
+          {% elif item.ext in ['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'appimage'] %}executable
+          {% else %}document
+          {% endif %}">
           {% if item.is_dir %}
             <i class="fas fa-folder"></i>
+          {% elif item.ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'] %}
+            <i class="fas fa-image"></i>
+          {% elif item.ext in ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v'] %}
+            <i class="fas fa-video"></i>
+          {% elif item.ext in ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma'] %}
+            <i class="fas fa-music"></i>
+          {% elif item.ext == 'pdf' %}
+            <i class="fas fa-file-pdf"></i>
+          {% elif item.ext in ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'] %}
+            <i class="fas fa-file-archive"></i>
+          {% elif item.ext in ['txt', 'md', 'log', 'ini', 'cfg', 'conf'] %}
+            <i class="fas fa-file-alt"></i>
+          {% elif item.ext in ['py', 'js', 'java', 'c', 'cpp', 'h', 'html', 'css', 'php', 'rb', 'go', 'rs', 'swift', 'kt'] %}
+            <i class="fas fa-code"></i>
+          {% elif item.ext in ['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'appimage'] %}
+            <i class="fas fa-cog"></i>
           {% else %}
-            <i class="fas fa-file-share"></i>
+            <i class="fas fa-file"></i>
           {% endif %}
         </div>
 
@@ -108,7 +135,7 @@
           <a class="mac-action-btn mac-action-btn-share" data-tooltip="访问分享链接" href="{{ url_for('download_shared', share_id=item.share_id) }}" target="_blank">
             <i class="fas fa-external-link-alt"></i>
           </a>
-          <button class="mac-action-btn mac-action-btn-delete unshare-btn" data-tooltip="取消分享" data-share-id="{{ item.share_id }}" data-item-name="{{ item.name }}">
+          <button type="button" class="mac-action-btn mac-action-btn-delete unshare-btn" data-tooltip="取消分享" data-share-id="{{ item.share_id }}" data-item-name="{{ item.name }}">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -269,8 +296,19 @@ main {
   }
 }
 
-/* 文件类型图标颜色 */
+/* 文件类型图标颜色 - 和主页完全一致 */
 .mac-file-icon.folder { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.mac-file-icon.image { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+.mac-file-icon.video { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.mac-file-icon.audio { background: linear-gradient(135deg, #10b981, #059669); }
+.mac-file-icon.pdf { background: linear-gradient(135deg, #f87171, #ef4444); }
+.mac-file-icon.word { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.mac-file-icon.excel { background: linear-gradient(135deg, #10b981, #059669); }
+.mac-file-icon.powerpoint { background: linear-gradient(135deg, #f97316, #ea580c); }
+.mac-file-icon.archive { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.mac-file-icon.code { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.mac-file-icon.text { background: linear-gradient(135deg, #94a3b8, #64748b); }
+.mac-file-icon.executable { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .mac-file-icon.document { background: linear-gradient(135deg, #a855f7, #9333ea); }
 
 /* 文件列表项 */
@@ -567,42 +605,38 @@ main {
 </style>
 
 <script>
-$(document).ready(function() {
-  // 取消分享功能 - 显示弹窗
-  $('.unshare-btn').click(function() {
-    var shareId = $(this).data('share-id');
-    var itemName = $(this).data('item-name');
-    
-    $('#unshare_share_id').val(shareId);
-    $('#unshare_item_name').text(itemName);
-    
-    // 显示弹窗
-    $('#unshareDialog').removeClass('hidden');
-    $('#unshareDialog').css({
-      'display': 'flex',
-      'position': 'fixed',
-      'inset': '0',
-      'background-color': 'rgba(0, 0, 0, 0.5)',
-      'align-items': 'center',
-      'justify-content': 'center',
-      'z-index': '9999'
+(function() {
+  // 取消分享功能 - 纯JavaScript版本
+  document.querySelectorAll('.unshare-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var shareId = this.getAttribute('data-share-id');
+      var itemName = this.getAttribute('data-item-name');
+      
+      document.getElementById('unshare_share_id').value = shareId;
+      document.getElementById('unshare_item_name').textContent = itemName;
+      
+      // 显示弹窗
+      var dialog = document.getElementById('unshareDialog');
+      dialog.classList.remove('hidden');
+      dialog.style.cssText = 'display:flex!important;position:fixed!important;inset:0!important;background-color:rgba(0,0,0,0.5)!important;align-items:center!important;justify-content:center!important;z-index:9999!important;';
+      document.body.style.overflow = 'hidden';
     });
-    $('body').css('overflow', 'hidden');
   });
   
   // ESC键关闭弹窗
-  $(document).keyup(function(e) {
+  document.addEventListener('keyup', function(e) {
     if (e.key === "Escape") {
       closeDialog();
     }
   });
-});
+})();
 
-// 关闭弹窗函数
+// 关闭弹窗函数 - 纯JS版本
 function closeDialog() {
-  $('#unshareDialog').addClass('hidden');
-  $('#unshareDialog').css('display', 'none');
-  $('body').css('overflow', 'auto');
+  var dialog = document.getElementById('unshareDialog');
+  dialog.classList.add('hidden');
+  dialog.style.display = 'none';
+  document.body.style.overflow = 'auto';
 }
 
 // 点击遮罩层关闭弹窗
